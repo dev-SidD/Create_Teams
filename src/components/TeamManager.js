@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import TeamPlayers from './TeamPlayers';
-import AddPlayerForm from './AddPlayerForm';
+import TeamPlayers from './TeamPlayers'; // Assuming this component exists
+import AddPlayerForm from './AddPlayerForm'; // Assuming this component exists
+
+// You might need to install a react-icons library if you don't have one:
+// npm install react-icons
+// or yarn add react-icons
+import { FaPlus } from 'react-icons/fa'; // Importing a plus icon
 
 const LOCAL_STORAGE_KEY = 'teamsData'; // Key for storing data in localStorage
 
@@ -27,6 +32,10 @@ const TeamManager = () => {
   const [teams, setTeams] = useState(getInitialTeams);
   const [teamName, setTeamName] = useState('');
   const [visibleTeamId, setVisibleTeamId] = useState(null);
+  const [addPlayerFormVisibleForTeamId, setAddPlayerFormVisibleForTeamId] = useState(null);
+
+  // Define a maximum length for the team name
+  const MAX_TEAM_NAME_LENGTH = 25; // You can adjust this value
 
   // Effect to save data to localStorage whenever the 'teams' state changes.
   useEffect(() => {
@@ -40,6 +49,13 @@ const TeamManager = () => {
       alert('Team name is required');
       return;
     }
+
+    // --- New validation for team name length ---
+    if (trimmed.length > MAX_TEAM_NAME_LENGTH) {
+      alert(`Team name cannot exceed ${MAX_TEAM_NAME_LENGTH} characters.`);
+      return;
+    }
+
     if (teams.some(team => team.name.toLowerCase() === trimmed.toLowerCase())) {
       alert('Team already exists');
       return;
@@ -55,21 +71,20 @@ const TeamManager = () => {
       const updatedTeams = teams.filter(team => team.id !== id);
       setTeams(updatedTeams);
       if (visibleTeamId === id) setVisibleTeamId(null);
+      if (addPlayerFormVisibleForTeamId === id) setAddPlayerFormVisibleForTeamId(null);
     }
   };
 
   const handleAddPlayerToTeam = (teamId, player) => {
     const updatedTeams = teams.map(team => {
       if (team.id === teamId) {
-        if (team.players.some(p => p.name.toLowerCase() === player.name.toLowerCase())) {
-          alert(`Player "${player.name}" already exists in this team.`);
-          return team;
-        }
         return { ...team, players: [...team.players, player] };
       }
       return team;
     });
     setTeams(updatedTeams);
+    // Automatically hide the form after a player is successfully added
+    setAddPlayerFormVisibleForTeamId(null);
   };
 
   const handleDeletePlayer = (teamId, index) => {
@@ -83,7 +98,6 @@ const TeamManager = () => {
     setTeams(updatedTeams);
   };
 
-  // Function to make a player captain
   const handleMakeCaptain = (teamId, playerIndex) => {
     const updatedTeams = teams.map(team => {
       if (team.id === teamId) {
@@ -97,7 +111,6 @@ const TeamManager = () => {
     setTeams(updatedTeams);
   };
 
-  // Function to remove captain status from a player
   const handleRemoveCaptain = (teamId, playerIndex) => {
     const updatedTeams = teams.map(team => {
       if (team.id === teamId) {
@@ -115,8 +128,21 @@ const TeamManager = () => {
   };
 
   const toggleTeamVisibility = (id) => {
-    setVisibleTeamId(prevId => (prevId === id ? null : id));
+    setVisibleTeamId(prevId => {
+      if (prevId === id) {
+        setAddPlayerFormVisibleForTeamId(null);
+        return null;
+      } else {
+        setAddPlayerFormVisibleForTeamId(null);
+        return id;
+      }
+    });
   };
+
+  const toggleAddPlayerFormVisibility = (teamId) => {
+    setAddPlayerFormVisibleForTeamId(prevId => (prevId === teamId ? null : teamId));
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-100 p-4 sm:p-6 lg:p-8 font-inter">
@@ -127,29 +153,36 @@ const TeamManager = () => {
           </span> Manager
         </h2>
 
+        {/* Input and button for adding new teams */}
         <div className="flex flex-col sm:flex-row gap-3 mb-8 ">
           <input
             type="text"
             placeholder="Enter new team name..."
             className="flex-1 p-3 border border-blue-200 rounded-lg shadow-sm
-                       focus:outline-none focus:ring-3 focus:ring-blue-400 focus:border-blue-400
-                       transition duration-300 ease-in-out text-gray-800 placeholder-gray-400"
+                         focus:outline-none focus:ring-3 focus:ring-blue-400 focus:border-blue-400
+                         transition duration-300 ease-in-out text-gray-800 placeholder-gray-400"
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
+            maxLength={MAX_TEAM_NAME_LENGTH} // HTML attribute for client-side enforcement
             aria-label="Enter team name"
           />
           <button
             onClick={handleAddTeam}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg
-                       shadow-md hover:shadow-lg transform hover:-translate-y-0.5
-                       transition duration-300 ease-in-out
-                       focus:outline-none focus:ring-3 focus:ring-blue-400 focus:ring-offset-2"
+                         shadow-md hover:shadow-lg transform hover:-translate-y-0.5
+                         transition duration-300 ease-in-out
+                         focus:outline-none focus:ring-3 focus:ring-blue-400 focus:ring-offset-2"
             aria-label="Add Team"
           >
             Add Team
           </button>
         </div>
+        {/* Visual feedback for character count of team name */}
+        <p className="text-right text-sm text-gray-500 mt-1 mb-4">
+          {teamName.length}/{MAX_TEAM_NAME_LENGTH} characters
+        </p>
 
+        {/* Display message if no teams exist, otherwise list teams */}
         {teams.length === 0 ? (
           <p className="text-center text-gray-600 text-xl py-10 bg-gray-50 rounded-xl shadow-inner border border-gray-200">
             No teams created yet. Let's build your first roster!
@@ -161,7 +194,6 @@ const TeamManager = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center flex-wrap gap-4 mb-4">
                   <span className="text-2xl sm:text-3xl font-bold text-teal-700 break-words max-w-full sm:max-w-[calc(100%-200px)]">
                     {team.name}
-                    {/* Display player count here */}
                     <span className="text-base font-normal text-gray-500 ml-2">({team.players.length} players)</span>
                   </span>
                   <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -188,15 +220,36 @@ const TeamManager = () => {
 
                 {visibleTeamId === team.id && (
                   <div className="mt-6 pt-6 border-t border-gray-200">
+                    {/* Add Player button positioned to the right */}
+                    <div className="flex justify-end mb-4">
+                      <button
+                        onClick={() => toggleAddPlayerFormVisibility(team.id)}
+                        className="p-3 bg-green-500 text-white rounded-full shadow-md
+                                   hover:bg-green-600 transform hover:scale-105
+                                   transition duration-300 ease-in-out
+                                   focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2
+                                   flex items-center justify-center w-10 h-10"
+                        aria-label={addPlayerFormVisibleForTeamId === team.id ? 'Hide Add Player Form' : 'Add New Player'}
+                        title={addPlayerFormVisibleForTeamId === team.id ? 'Hide Add Player Form' : 'Add New Player'}
+                      >
+                        <FaPlus className="text-xl" />
+                      </button>
+                    </div>
+
+                    {/* Conditionally render AddPlayerForm */}
+                    {addPlayerFormVisibleForTeamId === team.id && (
+                      <AddPlayerForm
+                        onAddPlayer={(player) => handleAddPlayerToTeam(team.id, player)}
+                        players={team.players}
+                      />
+                    )}
+
+                    {/* TeamPlayers component */}
                     <TeamPlayers
                       players={team.players}
                       onDeletePlayer={(index) => handleDeletePlayer(team.id, index)}
                       onMakeCaptain={(index) => handleMakeCaptain(team.id, index)}
                       onRemoveCaptain={(index) => handleRemoveCaptain(team.id, index)}
-                    />
-                    <AddPlayerForm
-                      onAddPlayer={(player) => handleAddPlayerToTeam(team.id, player)}
-                      players={team.players}
                     />
                   </div>
                 )}
