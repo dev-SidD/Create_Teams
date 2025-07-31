@@ -43,14 +43,16 @@ const TeamManager = () => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(teams));
   }, [teams]);
 
-  const handleAddTeam = () => {
+  // Modified to be called by form onSubmit
+  const handleAddTeam = (event) => {
+    event.preventDefault(); // Prevent default form submission behavior (page reload)
+
     const trimmed = teamName.trim();
     if (!trimmed) {
       alert('Team name is required');
       return;
     }
 
-    // --- New validation for team name length ---
     if (trimmed.length > MAX_TEAM_NAME_LENGTH) {
       alert(`Team name cannot exceed ${MAX_TEAM_NAME_LENGTH} characters.`);
       return;
@@ -153,30 +155,30 @@ const TeamManager = () => {
           </span> Manager
         </h2>
 
-        {/* Input and button for adding new teams */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-8 ">
+        {/* Wrap the input and button in a form element */}
+        <form onSubmit={handleAddTeam} className="flex flex-col sm:flex-row gap-3 mb-8">
           <input
             type="text"
             placeholder="Enter new team name..."
             className="flex-1 p-3 border border-blue-200 rounded-lg shadow-sm
-                         focus:outline-none focus:ring-3 focus:ring-blue-400 focus:border-blue-400
-                         transition duration-300 ease-in-out text-gray-800 placeholder-gray-400"
+                       focus:outline-none focus:ring-3 focus:ring-blue-400 focus:border-blue-400
+                       transition duration-300 ease-in-out text-gray-800 placeholder-gray-400"
             value={teamName}
             onChange={(e) => setTeamName(e.target.value)}
             maxLength={MAX_TEAM_NAME_LENGTH} // HTML attribute for client-side enforcement
             aria-label="Enter team name"
           />
           <button
-            onClick={handleAddTeam}
+            type="submit" // Set type to submit for form submission
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg
-                         shadow-md hover:shadow-lg transform hover:-translate-y-0.5
-                         transition duration-300 ease-in-out
-                         focus:outline-none focus:ring-3 focus:ring-blue-400 focus:ring-offset-2"
+                       shadow-md hover:shadow-lg transform hover:-translate-y-0.5
+                       transition duration-300 ease-in-out
+                       focus:outline-none focus:ring-3 focus:ring-blue-400 focus:ring-offset-2"
             aria-label="Add Team"
           >
             Add Team
           </button>
-        </div>
+        </form>
         {/* Visual feedback for character count of team name */}
         <p className="text-right text-sm text-gray-500 mt-1 mb-4">
           {teamName.length}/{MAX_TEAM_NAME_LENGTH} characters
